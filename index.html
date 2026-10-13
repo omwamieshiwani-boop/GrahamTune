@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Graham's Groove — Listen. Identify. Vibe.</title>
+<style>
+  :root {
+    --green: #1fa951;
+    --green-dark: #0f7a38;
+    --orange: #ff8a1f;
+    --orange-dark: #e06a00;
+    --bg: #0d1f14;
+    --bg-soft: #142a1c;
+    --text: #f4f7f2;
+    --muted: #a9b8ae;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 20% 10%, #1a3a25 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    padding: 28px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,138,31,0.15);
+  }
+  .logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--green), var(--orange));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.5px;
+  }
+  .logo span { font-size: 1.3rem; }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    margin-left: 24px;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+  }
+  nav a:hover { color: var(--orange); }
+
+  .hero {
+    text-align: center;
+    padding: 70px 20px 40px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(90deg, var(--green), var(--orange));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p {
+    color: var(--muted);
+    max-width: 620px;
+    margin: 0 auto 40px;
+    font-size: 1.05rem;
+  }
+
+  .listener {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px auto 50px;
+  }
+  .mic-btn {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--green), var(--orange));
+    color: white;
+    font-size: 3.2rem;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(31,169,81,0.35);
+    transition: transform 0.2s, box-shadow 0.3s;
+  }
+  .mic-btn:hover { transform: scale(1.05); }
+  .mic-btn.listening {
+    animation: pulse 1.6s infinite;
+    box-shadow: 0 0 0 0 rgba(255,138,31,0.6);
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,138,31,0.6); }
+    70%  { box-shadow: 0 0 0 35px rgba(255,138,31,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,138,31,0); }
+  }
+  .status {
+    margin-top: 22px;
+    font-size: 1.05rem;
+    color: var(--muted);
+    min-height: 26px;
+  }
+  .status.active { color: var(--orange); font-weight: 600; }
+
+  .result {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px;
+    background: var(--bg-soft);
+    border: 1px solid rgba(31,169,81,0.25);
+    border-radius: 18px;
+    display: none;
+    animation: slideUp 0.4s ease;
+  }
+  .result.show { display: block; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .result h3 {
+    font-size: 1.6rem;
+    color: var(--orange);
+    margin-bottom: 6px;
+  }
+  .result .artist {
+    color: var(--green);
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+  }
+  .result .meta {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+  .result .meta strong { color: var(--text); }
+  .result .cover {
+    width: 100%;
+    max-width: 220px;
+    border-radius: 12px;
+    margin: 14px auto;
+    display: block;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 60px auto;
+    padding: 0 24px;
+  }
+  .feature {
+    background: var(--bg-soft);
+    padding: 24px;
+    border-radius: 14px;
+    border-left: 3px solid var(--green);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feature:hover { border-left-color: var(--orange); transform: translateY(-3px); }
+  .feature h4 { color: var(--orange); margin-bottom: 8px; font-size: 1.1rem; }
+  .feature p { color: var(--muted); font-size: 0.95rem; line-height: 1.55; }
+
+  .api-setup {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 20px 24px;
+    background: rgba(255,138,31,0.08);
+    border: 1px dashed var(--orange);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .api-setup code {
+    background: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--green);
+  }
+  .api-setup input {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #000;
+    border: 1px solid #333;
+    color: var(--text);
+    border-radius: 6px;
+    font-family: monospace;
+  }
+
+  footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    border-top: 1px solid rgba(31,169,81,0.15);
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎧 Graham's <span>Groove</span></div>
+  <nav>
+    <a href="#listen">Listen</a>
+    <a href="#features">Features</a>
+    <a href="#setup">Setup</a>
+  </nav>
+</header>
+
+<section class="hero" id="listen">
+  <h1>What's that <span class="accent">song</span>?</h1>
+  <p>Tap the button, let Graham's Groove listen for a few seconds, and we'll tell you the title, artist, and album — instantly.</p>
+
+  <div class="listener">
+    <button class="mic-btn" id="micBtn" title="Tap to listen">🎤</button>
+    <div class="status" id="status">Tap the mic to start listening</div>
+  </div>
+
+  <div class="result" id="result">
+    <img class="cover" id="cover" alt="album cover" style="display:none"/>
+    <h3 id="songTitle">—</h3>
+    <div class="artist" id="songArtist">—</div>
+    <div class="meta" id="songMeta"></div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="feature">
+    <h4>🎵 Instant Recognition</h4>
+    <p>Identify any song playing around you in under 10 seconds using advanced audio fingerprinting.</p>
+  </div>
+  <div class="feature">
+    <h4>🔒 Private by Design</h4>
+    <p>Audio is processed in your browser and sent directly to the recognition service — nothing is stored.</p>
+  </div>
+  <div class="feature">
+    <h4>📚 Rich Metadata</h4>
+    <p>Get the title, artist, album, release year, label, and even a link to listen on streaming platforms.</p>
+  </div>
+  <div class="feature">
+    <h4>🎨 Fresh Vibes</h4>
+    <p>A bold green & orange theme that feels alive — because music should feel alive.</p>
+  </div>
+</section>
+
+<section class="api-setup" id="setup">
+  <strong style="color:var(--orange)">⚙️ API Setup (one-time)</strong><br>
+  Graham's Groove uses <strong>ACRCloud</strong> for song recognition. Get free keys at
+  <a href="https://console.acrcloud.com" target="_blank" style="color:var(--green)">console.acrcloud.com</a>,
+  create a project with the <code>ACR_SDK</code> type, and paste your credentials below:
+  <input id="hostInput" placeholder="host (e.g. identify-xxx.acrcloud.com)"/>
+  <input id="accessKeyInput" placeholder="access_key"/>
+  <input id="accessSecretInput" placeholder="access_secret" type="password"/>
+  <div style="margin-top:10px">
+    <button onclick="saveKeys()" style="background:var(--green);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer">Save Keys</button>
+  </div>
+</section>
+
+<footer>
+  © 2026 Graham's Groove — Made with 🎶 for music lovers everywhere.
+</footer>
+
+<script>
+/* ---------- API key storage ---------- */
+const keys = {
+  host:        localStorage.getItem('gg_host')   || '',
+  access_key:  localStorage.getItem('gg_ak')     || '',
+  access_secret:localStorage.getItem('gg_as')    || ''
+};
+function saveKeys() {
+  keys.host = document.getElementById('hostInput').value.trim();
+  keys.access_key = document.getElementById('accessKeyInput').value.trim();
+  keys.access_secret = document.getElementById('accessSecretInput').value.trim();
+  localStorage.setItem('gg_host', keys.host);
+  localStorage.setItem('gg_ak', keys.access_key);
+  localStorage.setItem('gg_as', keys.access_secret);
+  setStatus('✅ Keys saved. Ready to listen!', true);
+}
+document.getElementById('hostInput').value = keys.host;
+document.getElementById('accessKeyInput').value = keys.access_key;
+document.getElementById('accessSecretInput').value = keys.access_secret;
+
+/* ---------- UI helpers ---------- */
+const micBtn   = document.getElementById('micBtn');
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+function setStatus(msg, active=false) {
+  statusEl.textContent = msg;
+  statusEl.classList.toggle('active', active);
+}
+
+/* ---------- Audio recording ---------- */
+let mediaRecorder, audioChunks = [], listening = false;
+
+micBtn.addEventListener('click', async () => {
+  if (listening) return;
+  if (!keys.host || !keys.access_key || !keys.access_secret) {
+    setStatus('⚠️ Please add your ACRCloud keys below first.');
+    document.getElementById('setup').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      sendToACRCloud(blob);
+    };
+    mediaRecorder.start();
+    listening = true;
+    micBtn.classList.add('listening');
+    setStatus('🎧 Listening... play the song now', true);
+    setTimeout(() => {
+      if (listening && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        listening = false;
+        micBtn.classList.remove('listening');
+        setStatus('🔍 Identifying...');
+      }
+    }, 8000); // listen for 8 seconds
+  } catch (err) {
+    setStatus('❌ Microphone access denied.');
+  }
+});
+
+/* ---------- ACRCloud signing + request ---------- */
+async function sendToACRCloud(blob) {
+  try {
+    const fileBytes = new Uint8Array(await blob.arrayBuffer());
+    const base64Audio = btoa(String.fromCharCode(...fileBytes));
+
+    // Build string to sign
+    const httpMethod = 'POST';
+    const httpURI    = '/v1/identify';
+    const dataType   = 'audio';
+    const signatureVersion = '1';
+    const timestamp  = Math.floor(Date.now() / 1000);
+    const sampleBytes = fileBytes.slice(0, 1024 * 1024); // first ~1MB
+    const sampleHex  = sha1Hex(sampleBytes);
+
+    const stringToSign = `${httpMethod}\n${httpURI}\n${keys.access_key}\n${dataType}\n${signatureVersion}\n${timestamp}\n${sampleHex}`;
+    const sign = await hmacSha1(keys.access_secret, stringToSign);
+    const signature = btoa(String.fromCharCode(...sign));
+
+    // Build multipart form
+    const form = new FormData();
+    form.append('sample', blob, 'sample.webm');
+    form.append('access_key', keys.access_key);
+    form.append('data_type', dataType);
+    form.append('signature_version', signatureVersion);
+    form.append('signature', signature);
+    form.append('sample_bytes', sampleBytes.length);
+    form.append('timestamp', timestamp);
+
+    const res = await fetch(`https://${keys.host}${httpURI}`, {
+      method: 'POST',
+      body: form
+    });
+    const data = await res.json();
+    showResult(data);
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ Recognition failed. Check keys & connection.');
+  }
+}
+
+function showResult(data) {
+  if (data.status && data.status.code === 0 && data.metadata && data.metadata.music && data.metadata.music[0]) {
+    const m = data.metadata.music[0];
+    document.getElementById('songTitle').textContent = m.title || 'Unknown Title';
+    document.getElementById('songArtist').textContent = (m.artists || []).map(a => a.name).join(', ') || 'Unknown Artist';
+    let meta = '';
+    if (m.album)    meta += `<strong>Album:</strong> ${m.album.name}<br>`;
+    if (m.release_date) meta += `<strong>Released:</strong> ${m.release_date}<br>`;
+    if (m.label)    meta += `<strong>Label:</strong> ${m.label}<br>`;
+    if (m.genres)   meta += `<strong>Genre:</strong> ${m.genres.map(g=>g.name).join(', ')}<br>`;
+    if (m.external_metadata && m.external_metadata.music) {
+      const ext = m.external_metadata.music;
+      if (ext.spotify)  meta += `<a href="https://open.spotify.com/track/${ext.spotify.track.id}" target="_blank" style="color:var(--green)">▶ Listen on Spotify</a><br>`;
+      if (ext.youtube)  meta += `<a href="https://www.youtube.com/watch?v=${ext.youtube.vid}" target="_blank" style="color:var(--orange)">▶ Watch on YouTube</a>`;
+    }
+    document.getElementById('songMeta').innerHTML = meta;
+
+    const cover = document.getElementById('cover');
+    if (m.album && m.album.cover_html) {
+      // ACRCloud sometimes returns a data URI
+      cover.src = m.album.cover_html;
+      cover.style.display = 'block';
+    } else {
+      cover.style.display = 'none';
+    }
+    resultEl.classList.add('show');
+    setStatus('✅ Song found!');
+  } else {
+    setStatus('🤔 No match found. Try again with a clearer sample.');
+  }
+}
+
+/* ---------- Crypto helpers (SHA-1 + HMAC-SHA-1) ---------- */
+async function sha1Hex(bytes) {
+  const hash = await crypto.subtle.digest('SHA-1', bytes);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function hmacSha1(key, message) {
+  const enc = new TextEncoder();
+  const keyData = enc.encode(key);
+  const msgData = enc.encode(message);
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', keyData, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+  return new Uint8Array(sig);
+}
+</script>
+</body>
+</html>
